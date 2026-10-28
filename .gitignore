@@ -1,0 +1,24 @@
+# Secrets - never commit real credentials
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+coverage/
+
+# Logs / OS
+*.log
+.DS_Store
+Thumbs.db
