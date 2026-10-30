@@ -60,9 +60,11 @@ def test_session_token_requires_auth_when_configured() -> None:
     settings = load_settings({"GEMINI_API_KEY": FAKE_KEY, "AUTH_TOKEN": "s3cret"})
     client = make_client(settings)
     assert client.post("/api/session-token").status_code == 401
-    assert client.post(
-        "/api/session-token", headers={"Authorization": "Bearer nope"}
-    ).status_code == 401
-    assert client.post(
-        "/api/session-token", headers={"Authorization": "Bearer s3cret"}
-    ).status_code == 200
+    assert (
+        client.post("/api/session-token", headers={"Authorization": "Bearer nope"}).status_code
+        == 401
+    )
+    assert (
+        client.post("/api/session-token", headers={"Authorization": "Bearer s3cret"}).status_code
+        == 200
+    )
