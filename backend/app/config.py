@@ -32,6 +32,7 @@ class Settings:
     allowed_origins: tuple[str, ...]
     token_rate_limit_per_minute: int
     token_ttl_minutes: int
+    auth_token: str
 
     def __repr__(self) -> str:  # never leak the key into logs
         return (
@@ -93,4 +94,5 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         allowed_origins=origins,
         token_rate_limit_per_minute=_int(env, "TOKEN_RATE_LIMIT_PER_MINUTE", 10, 1, 1000),
         token_ttl_minutes=_int(env, "TOKEN_TTL_MINUTES", 30, 2, 60),
+        auth_token=env.get("AUTH_TOKEN", "").strip(),
     )

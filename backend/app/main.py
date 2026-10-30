@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import hmac
 import logging
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -24,6 +25,14 @@ class SessionTokenResponse(BaseModel):
     apiVersion: str  # noqa: N815 - camelCase for the JS client
     expireTime: str  # noqa: N815
     newSessionExpireTime: str  # noqa: N815
+
+
+def _authorized(expected: str, authorization: str | None) -> bool:
+    """Check an ``Authorization`` header against the configured shared secret."""
+    if not expected or not authorization:
+        return False
+    token = authorization.removeprefix("Bearer ").strip()
+    return bool(token) and hmac.compare_digest(token, expected)
 
 
 def create_app(
@@ -45,7 +54,7 @@ def create_app(
         CORSMiddleware,
         allow_origins=list(settings.allowed_origins),
         allow_methods=["GET", "POST"],
-        allow_headers=["Content-Type"],
+        allow_headers=["Content-Type", "Authorization"],
     )
 
     @app.get("/api/health")
@@ -53,7 +62,11 @@ def create_app(
         return {"status": "ok", "model": settings.gemini_model}
 
     @app.post("/api/session-token", response_model=SessionTokenResponse)
-    async def session_token(request: Request) -> SessionTokenResponse:
+    async def session_token(
+        request: Request, authorization: str | None = Header(default=None)
+    ) -> SessionTokenResponse:
+        if settings.auth_token and not _authorized(settings.auth_token, authorization):
+            raise HTTPException(401, "Missing or invalid authorization")
         client_ip = request.client.host if request.client else "unknown"
         if not limiter.allow(client_ip):
             raise HTTPException(429, "Too many session requests. Wait a minute and try again.")

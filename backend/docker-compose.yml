@@ -1,0 +1,10 @@
+# Run: cp .env.example .env  (set GEMINI_API_KEY, and AUTH_TOKEN for public use)
+#      docker compose up -d --build
+services:
+  voiceagent:
+    build: .
+    image: realtime-voiceagent-backend:latest
+    ports:
+      - "8000:8000"   # change the host port if running alongside other services
+    env_file: .env
+    restart: unless-stopped

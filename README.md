@@ -146,7 +146,8 @@ cp .env.example .env.local              # optional; defaults work for local dev
 | `ALLOWED_ORIGINS` | no | `http://localhost:3000` | CORS origins, comma-separated; `*` is rejected |
 | `TOKEN_RATE_LIMIT_PER_MINUTE` | no | `10` | Token requests per client IP per minute |
 | `TOKEN_TTL_MINUTES` | no | `30` | Token lifetime (2–60) |
-| `HOST` / `PORT` | no | `127.0.0.1` / `8000` | Bind address for `python -m app` |
+| `AUTH_TOKEN` | no | *(unset)* | Shared secret required on `POST /api/session-token` (`Authorization: Bearer …`). Set it before exposing the backend publicly. |
+| `HOST` / `PORT` | no | `127.0.0.1` / `8000` | Bind address for `python -m app`. Use `HOST=0.0.0.0` behind a reverse proxy. |
 
 The backend refuses to start if `GEMINI_API_KEY` is missing or still the placeholder:
 
@@ -160,6 +161,7 @@ Configuration error: GEMINI_API_KEY is not set. Create an API key at https://ais
 |---|---|---|
 | `BACKEND_URL` | `http://127.0.0.1:8000` | Where Next.js proxies `/api/*`. It is read when `next dev` starts and **baked in at `next build`**, so set it before building. |
 | `NEXT_PUBLIC_BACKEND_URL` | *(empty = same origin)* | Optional: call a backend on another origin directly. Add that origin to `ALLOWED_ORIGINS`. |
+| `BACKEND_AUTH_TOKEN` | *(unset)* | Optional: shared secret forwarded to the backend by the `/api/session-token` route handler. Must match the backend's `AUTH_TOKEN`. |
 
 ## Running
 

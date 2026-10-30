@@ -23,7 +23,13 @@ def main() -> int:
         return 1
     host = os.environ.get("HOST", "127.0.0.1")
     port = int(os.environ.get("PORT", "8000"))
-    uvicorn.run(create_app(settings), host=host, port=port)
+    uvicorn.run(
+        create_app(settings),
+        host=host,
+        port=port,
+        proxy_headers=True,
+        forwarded_allow_ips="*",
+    )
     return 0
 
 

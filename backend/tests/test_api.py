@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from app.config import Settings
+from app.config import Settings, load_settings
 from app.main import create_app
 
 from .conftest import FAKE_KEY, FakeIssuer
@@ -54,3 +54,15 @@ def test_cors_only_for_allowed_origins(settings: Settings) -> None:
         "/api/session-token", headers={"Origin": "https://evil.example", **preflight}
     )
     assert "access-control-allow-origin" not in bad.headers
+
+
+def test_session_token_requires_auth_when_configured() -> None:
+    settings = load_settings({"GEMINI_API_KEY": FAKE_KEY, "AUTH_TOKEN": "s3cret"})
+    client = make_client(settings)
+    assert client.post("/api/session-token").status_code == 401
+    assert client.post(
+        "/api/session-token", headers={"Authorization": "Bearer nope"}
+    ).status_code == 401
+    assert client.post(
+        "/api/session-token", headers={"Authorization": "Bearer s3cret"}
+    ).status_code == 200

@@ -1,0 +1,19 @@
+# Render Blueprint — FastAPI token backend.
+# Secrets (GEMINI_API_KEY, AUTH_TOKEN) are prompted on first deploy.
+# This backend is stateless, so it can run on the free plan (sleeps when idle).
+services:
+  - type: web
+    name: realtime-voiceagent-backend
+    runtime: docker
+    rootDir: backend
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: AUTH_TOKEN
+        sync: false
+      # Optional: only needed if the browser calls this backend directly (CORS),
+      # rather than going through the Next.js /api/session-token route handler.
+      # - key: ALLOWED_ORIGINS
+      #   value: https://your-frontend.vercel.app
