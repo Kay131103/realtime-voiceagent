@@ -85,6 +85,10 @@ export function VoiceAgent() {
         <p className="text-center text-xs text-zinc-500">
           Tip: use headphones to keep Gemini from hearing itself.
         </p>
+        <p className="text-center text-xs text-zinc-600">
+          ⚠️ Free hosting: the backend sleeps when idle — the first connection can take up to
+          ~45 s. If it times out, wait a moment and hit Reconnect.
+        </p>
       </section>
 
       <Transcript entries={agent.transcript} />
