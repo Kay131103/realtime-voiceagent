@@ -28,7 +28,7 @@ export const fetchSessionToken: FetchToken = async () => {
     throw new AgentError(
       "backend-unreachable",
       timedOut
-        ? "The backend didn't respond in time — it's likely waking up from its free-tier sleep. Wait ~30 seconds, then click Reconnect."
+        ? "The backend didn't respond in time — free-tier hosting means it sleeps when idle and loading takes time while it wakes up. Wait ~30 seconds, then click Reconnect."
         : "Could not reach the backend. Make sure it is running (see README).",
     );
   }
