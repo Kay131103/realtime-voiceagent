@@ -280,3 +280,27 @@ There is no automated live test, because it needs a real microphone and costs qu
 - CORS is restricted to `ALLOWED_ORIGINS` (wildcards rejected). By default the browser talks
   same-origin through the Next.js proxy and the backend binds to `127.0.0.1`.
 - The token endpoint is POST-only and rate-limited per IP.
+
+
+## Deploy it free (one click each)
+
+**Backend** — Render free plan (stateless, sleeps when idle):
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Kay131103/realtime-voiceagent)
+
+1. Click the button, log in / create a free Render account
+2. When prompted, paste `GEMINI_API_KEY` from
+   [aistudio.google.com/apikey](https://aistudio.google.com/apikey) (free tier);
+   leave `AUTH_TOKEN` blank
+3. Deploy — backend lands at `https://realtime-voiceagent-backend.onrender.com`
+
+**Frontend** — Vercel free:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FKay131103%2Frealtime-voiceagent%2Ftree%2Fmain%2Ffrontend&project-name=voiceagent-frontend&root-directory=frontend)
+
+1. Click the button, import the repo, set **Root Directory** to `frontend` if not pre-filled
+2. Add env var: `BACKEND_URL` = `https://realtime-voiceagent-backend.onrender.com`
+3. Deploy — done. Open the site, allow mic access, and talk to it.
+
+Free-tier note: the Render backend sleeps when idle, so the first voice session after a
+nap may take ~30 s to wake. Say something while it warms up 🙂
