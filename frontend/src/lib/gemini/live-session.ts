@@ -118,6 +118,8 @@ export class VoiceAgentSession {
   private connectionId = 0;
   private ready = false;
   private resumeHandle: string | undefined;
+  /** Requested session language: "auto", a BCP-47 code, or undefined (backend default). */
+  private language: string | undefined;
   private lastVoiceAt = 0;
   private serverUserSpeaking = false;
   private awaitingReplySince: number | null = null;
@@ -138,8 +140,9 @@ export class VoiceAgentSession {
   }
 
   /** Start a new conversation. Call from a click handler (audio needs a user gesture). */
-  async start() {
+  async start(language?: string) {
     if (this.active) return;
+    this.language = language;
     this.resumeHandle = undefined;
     this.update({ transcript: [], reconnectAttempt: 0, model: null });
     await this.open();
@@ -217,7 +220,7 @@ export class VoiceAgentSession {
     this.ready = false;
     this.update({ phase });
 
-    const token = await this.deps.fetchToken();
+    const token = await this.deps.fetchToken(this.language);
     if (gen !== this.connectionId) return;
 
     let resolveReady!: () => void;

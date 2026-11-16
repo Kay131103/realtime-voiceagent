@@ -8,19 +8,21 @@ export interface SessionToken {
   newSessionExpireTime: string;
 }
 
-export type FetchToken = () => Promise<SessionToken>;
+export type FetchToken = (language?: string) => Promise<SessionToken>;
 
 const TOKEN_TIMEOUT_MS = 10_000;
 
 /** Same-origin by default: Next.js rewrites /api/* to the FastAPI backend. */
 const TOKEN_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL ?? ""}/api/session-token`;
 
-export const fetchSessionToken: FetchToken = async () => {
+export const fetchSessionToken: FetchToken = async (language) => {
   let res: Response;
   try {
     res = await fetch(TOKEN_URL, {
       method: "POST",
       cache: "no-store",
+      headers: language ? { "Content-Type": "application/json" } : undefined,
+      body: language ? JSON.stringify({ language }) : undefined,
       signal: AbortSignal.timeout(TOKEN_TIMEOUT_MS),
     });
   } catch (err) {

@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import pytest
 from google.genai import types
 
-from app.config import Settings
+from app.config import Settings, load_settings
 from app.rate_limit import RateLimiter
 from app.tokens import GeminiTokenIssuer, TokenIssueError, build_token_config
 
@@ -26,8 +26,51 @@ def test_token_config_is_single_use_and_locked(settings: Settings) -> None:
     assert live.response_modalities == [types.Modality.AUDIO]
     assert live.input_audio_transcription is not None
     assert live.output_audio_transcription is not None
-    assert live.system_instruction == settings.system_instruction
+    assert settings.system_instruction in str(live.system_instruction)
     assert live.session_resumption is None  # left unlocked so the client can resume
+
+
+def _live_config(cfg: types.CreateAuthTokenConfig) -> types.LiveConnectConfig:
+    constraints = cfg.live_connect_constraints
+    live = constraints.config if constraints else None
+    assert live is not None
+    return live
+
+
+def _speech(live: types.LiveConnectConfig) -> types.SpeechConfig:
+    speech = live.speech_config
+    assert speech is not None
+    return speech
+
+
+def test_auto_language_config(settings: Settings) -> None:
+    now = dt.datetime(2026, 1, 1, tzinfo=dt.UTC)
+    live = _live_config(build_token_config(settings, now, "auto"))
+    # No language pin: the voice follows the user's language.
+    assert _speech(live).language_code is None
+    instruction = str(live.system_instruction)
+    assert "same language the user is currently speaking" in instruction
+    assert settings.system_instruction in instruction
+
+
+def test_pinned_language_config(settings: Settings) -> None:
+    now = dt.datetime(2026, 1, 1, tzinfo=dt.UTC)
+    live = _live_config(build_token_config(settings, now, "ta-IN"))
+    assert _speech(live).language_code == "ta-IN"
+    assert "Always respond in Tamil (ta-IN)" in str(live.system_instruction)
+
+
+def test_language_defaults_to_settings(settings: Settings) -> None:
+    settings = load_settings({**{"GEMINI_API_KEY": FAKE_KEY}, "GEMINI_LANGUAGE": "hi-IN"})
+    now = dt.datetime(2026, 1, 1, tzinfo=dt.UTC)
+    live = _live_config(build_token_config(settings, now))
+    assert _speech(live).language_code == "hi-IN"
+
+
+def test_invalid_language_raises(settings: Settings) -> None:
+    now = dt.datetime(2026, 1, 1, tzinfo=dt.UTC)
+    with pytest.raises(TokenIssueError, match="Invalid language"):
+        build_token_config(settings, now, "not a language")
 
 
 class _FakeTokens:

@@ -5,16 +5,26 @@ const AUTH_TOKEN = process.env.BACKEND_AUTH_TOKEN ?? "";
 
 // Same-origin proxy to the FastAPI backend. Any shared secret is injected
 // server-side here, so it never reaches the browser.
-export async function POST() {
+export async function POST(request: Request) {
+  let body: string | undefined;
+  try {
+    body = await request.text();
+  } catch {
+    body = undefined;
+  }
   try {
     const res = await fetch(`${BACKEND_URL}/api/session-token`, {
       method: "POST",
       cache: "no-store",
-      headers: AUTH_TOKEN ? { Authorization: `Bearer ${AUTH_TOKEN}` } : undefined,
+      headers: {
+        ...(AUTH_TOKEN ? { Authorization: `Bearer ${AUTH_TOKEN}` } : {}),
+        ...(body ? { "Content-Type": "application/json" } : {}),
+      },
+      body,
       signal: AbortSignal.timeout(10_000),
     });
-    const body = await res.text();
-    return new NextResponse(body, {
+    const text = await res.text();
+    return new NextResponse(text, {
       status: res.status,
       headers: { "Content-Type": "application/json" },
     });

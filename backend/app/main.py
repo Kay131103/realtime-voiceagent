@@ -12,11 +12,17 @@ from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from .config import Settings, load_settings
+from .config import Settings, load_settings, parse_language
 from .rate_limit import RateLimiter
 from .tokens import GeminiTokenIssuer, TokenIssueError, TokenIssuer
 
 logger = logging.getLogger("voice_agent")
+
+
+class SessionTokenRequest(BaseModel):
+    """Optional body of POST /api/session-token."""
+
+    language: str | None = None
 
 
 class SessionTokenResponse(BaseModel):
@@ -63,15 +69,25 @@ def create_app(
 
     @app.post("/api/session-token", response_model=SessionTokenResponse)
     async def session_token(
-        request: Request, authorization: str | None = Header(default=None)
+        request: Request,
+        data: SessionTokenRequest | None = None,
+        authorization: str | None = Header(default=None),
     ) -> SessionTokenResponse:
         if settings.auth_token and not _authorized(settings.auth_token, authorization):
             raise HTTPException(401, "Missing or invalid authorization")
+        if data is not None and data.language:
+            try:
+                language = parse_language(data.language)
+            except ValueError as exc:
+                raise HTTPException(400, str(exc)) from exc
+        else:
+            # No request (or no language): fall back to GEMINI_LANGUAGE.
+            language = None
         client_ip = request.client.host if request.client else "unknown"
         if not limiter.allow(client_ip):
             raise HTTPException(429, "Too many session requests. Wait a minute and try again.")
         try:
-            issued = await issuer.issue()
+            issued = await issuer.issue(language)
         except TokenIssueError as exc:
             logger.warning("Token issue failed: %s", exc)
             raise HTTPException(502, str(exc)) from exc
