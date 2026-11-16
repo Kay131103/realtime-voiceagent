@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Gemini Voice Agent",
+  title: "VoxBox",
   description: "Real-time voice assistant powered by the Gemini Live API",
 };
 

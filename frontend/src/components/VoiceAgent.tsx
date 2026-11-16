@@ -33,7 +33,7 @@ export function VoiceAgent() {
   return (
     <div className="mx-auto flex h-full w-full max-w-3xl flex-col gap-6 px-4 py-8">
       <header className="flex flex-wrap items-baseline justify-between gap-2">
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-50">Gemini Voice Agent</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-50">VoxBox</h1>
         <p className="text-xs text-zinc-500">
           {agent.model ? `Model: ${agent.model}` : "Real-time voice via the Gemini Live API"}
         </p>
