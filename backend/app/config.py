@@ -8,12 +8,19 @@ from dataclasses import dataclass
 
 DEFAULT_MODEL = "gemini-3.8-live"
 DEFAULT_VOICE = "Kore"
+# Pins the spoken language/accent of the prebuilt voices. Native-audio Live
+# models drift across languages without this: the voice follows whatever
+# language it "hears", so typed input in one language can be answered in another.
+DEFAULT_LANGUAGE = "en-US"
 # The SDKs only support ephemeral tokens on v1alpha at the moment.
 DEFAULT_API_VERSION = "v1alpha"
 DEFAULT_SYSTEM_INSTRUCTION = (
-    "You are a friendly, concise voice assistant. Keep answers short and "
-    "conversational, because they are spoken aloud. If you did not understand "
-    "the user, ask them to repeat."
+    "You are a friendly, concise voice assistant. Always respond in English; "
+    "never switch to another language, even if the user mixes languages or "
+    "speaks in a different one. Keep answers short and conversational, because "
+    "they are spoken aloud. If you did not understand the user, ask them to "
+    "repeat. If the user interrupts you, stop, briefly acknowledge what they "
+    "said, and continue from where you left off."
 )
 PLACEHOLDER_KEYS = {"", "your_gemini_api_key_here", "changeme"}
 
@@ -27,6 +34,7 @@ class Settings:
     gemini_api_key: str
     gemini_model: str
     gemini_voice: str
+    gemini_language: str
     gemini_api_version: str
     system_instruction: str
     allowed_origins: tuple[str, ...]
@@ -37,6 +45,7 @@ class Settings:
     def __repr__(self) -> str:  # never leak the key into logs
         return (
             f"Settings(model={self.gemini_model!r}, voice={self.gemini_voice!r}, "
+            f"language={self.gemini_language!r}, "
             f"api_version={self.gemini_api_version!r}, origins={self.allowed_origins!r})"
         )
 
@@ -88,6 +97,7 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         gemini_api_key=api_key,
         gemini_model=model,
         gemini_voice=env.get("GEMINI_VOICE", "").strip() or DEFAULT_VOICE,
+        gemini_language=env.get("GEMINI_LANGUAGE", "").strip() or DEFAULT_LANGUAGE,
         gemini_api_version=api_version,
         system_instruction=env.get("GEMINI_SYSTEM_INSTRUCTION", "").strip()
         or DEFAULT_SYSTEM_INSTRUCTION,

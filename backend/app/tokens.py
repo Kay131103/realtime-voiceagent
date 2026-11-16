@@ -44,12 +44,27 @@ def build_live_config(settings: Settings) -> types.LiveConnectConfig:
         response_modalities=[types.Modality.AUDIO],
         system_instruction=settings.system_instruction,
         speech_config=types.SpeechConfig(
+            # language_code pins the language/accent of the prebuilt voice.
+            # Without it, native-audio voices drift into whatever language the
+            # conversation touches, so answers can come back in the wrong tongue.
+            language_code=settings.gemini_language,
             voice_config=types.VoiceConfig(
                 prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=settings.gemini_voice)
-            )
+            ),
         ),
         input_audio_transcription=types.AudioTranscriptionConfig(),
         output_audio_transcription=types.AudioTranscriptionConfig(),
+        # Server-side VAD tuning: START_SENSITIVITY_LOW only opens a turn on
+        # clearly spoken audio, so speaker echo / background noise no longer
+        # triggers barge-in and cuts the assistant off mid-sentence.
+        realtime_input_config=types.RealtimeInputConfig(
+            automatic_activity_detection=types.AutomaticActivityDetection(
+                start_of_speech_sensitivity=types.StartSensitivity.START_SENSITIVITY_LOW,
+                end_of_speech_sensitivity=types.EndSensitivity.END_SENSITIVITY_HIGH,
+                prefix_padding_ms=200,
+                silence_duration_ms=500,
+            ),
+        ),
         # Lets conversations outlive the default context window.
         context_window_compression=types.ContextWindowCompressionConfig(
             sliding_window=types.SlidingWindow()
