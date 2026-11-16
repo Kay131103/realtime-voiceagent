@@ -20,7 +20,7 @@ export function useVoiceAgent() {
 
   return {
     ...snapshot,
-    start: () => void session.start(),
+    start: (language?: string) => void session.start(language),
     end: () => session.end(),
     reconnect: () => void session.reconnect(),
     setMuted: (muted: boolean) => session.setMuted(muted),

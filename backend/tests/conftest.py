@@ -22,9 +22,11 @@ class FakeIssuer:
         self.settings = settings
         self.fail = fail
         self.calls = 0
+        self.language: str | None = None
 
-    async def issue(self) -> IssuedToken:
+    async def issue(self, language: str | None = None) -> IssuedToken:
         self.calls += 1
+        self.language = language
         if self.fail:
             raise TokenIssueError(self.fail)
         now = dt.datetime(2026, 1, 1, tzinfo=dt.UTC)

@@ -1,15 +1,30 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { useVoiceAgent } from "@/hooks/useVoiceAgent";
+import { AUTO_LANGUAGE, LANGUAGES, rememberLanguage, savedLanguage } from "@/lib/languages";
 import { StatusIndicator } from "./StatusIndicator";
 import { Transcript } from "./Transcript";
 
 const button =
   "rounded-full px-6 py-2.5 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
+const select =
+  "rounded-full border border-zinc-700 bg-zinc-800 px-4 py-2.5 text-sm text-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-400 disabled:cursor-not-allowed disabled:opacity-50";
 
 export function VoiceAgent() {
   const agent = useVoiceAgent();
   const { phase, error } = agent;
+  const [language, setLanguage] = useState(AUTO_LANGUAGE);
+
+  // Restore the picker's last choice after hydration to avoid an SSR mismatch.
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage is not readable during SSR
+  useEffect(() => setLanguage(savedLanguage()), []);
+
+  const changeLanguage = (code: string) => {
+    setLanguage(code);
+    rememberLanguage(code);
+  };
 
   const busy = phase === "starting-microphone" || phase === "connecting" || phase === "reconnecting";
   const inConversation = busy || phase === "listening" || phase === "processing" || phase === "speaking";
@@ -72,9 +87,25 @@ export function VoiceAgent() {
                   Reconnect
                 </button>
               ) : null}
+              <label className="flex items-center gap-2 text-xs text-zinc-400">
+                <span>Language</span>
+                <select
+                  data-testid="language-select"
+                  value={language}
+                  onChange={(e) => changeLanguage(e.target.value)}
+                  className={select}
+                  aria-label="Conversation language"
+                >
+                  {LANGUAGES.map((l) => (
+                    <option key={l.code} value={l.code}>
+                      {l.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <button
                 type="button"
-                onClick={agent.start}
+                onClick={() => agent.start(language)}
                 className={`${button} bg-emerald-500 text-zinc-950 hover:bg-emerald-400 focus-visible:outline-emerald-300`}
               >
                 {phase === "idle" ? "Start Conversation" : "Start New Conversation"}

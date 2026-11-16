@@ -334,6 +334,31 @@ describe("VoiceAgentSession", () => {
     await startConnected(t);
     expect(t.snap().transcript).toEqual([]);
   });
+
+  it("sends the chosen language to the token endpoint and reuses it on reconnect", async () => {
+    const t = setup();
+    const started = t.session.start("ta-IN");
+    await flush();
+    expect(t.deps.fetchToken).toHaveBeenCalledWith("ta-IN");
+    t.last().message({ setupComplete: {} });
+    await started;
+    expect(t.deps.fetchToken).toHaveBeenCalledTimes(1);
+
+    // Reconnect after an unexpected close keeps the same language.
+    t.last().serverClose(1011);
+    await flush();
+    expect(t.deps.fetchToken).toHaveBeenCalledTimes(2);
+    expect(t.deps.fetchToken).toHaveBeenLastCalledWith("ta-IN");
+  });
+
+  it("uses the backend default when no language is chosen", async () => {
+    const t = setup();
+    const started = t.session.start();
+    await flush();
+    expect(t.deps.fetchToken).toHaveBeenCalledWith(undefined);
+    t.last().message({ setupComplete: {} });
+    await started;
+  });
 });
 
 beforeEach(() => vi.clearAllMocks());

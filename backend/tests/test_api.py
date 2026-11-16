@@ -68,3 +68,31 @@ def test_session_token_requires_auth_when_configured() -> None:
         client.post("/api/session-token", headers={"Authorization": "Bearer s3cret"}).status_code
         == 200
     )
+
+
+def _fake_issuer(settings: Settings) -> FakeIssuer:
+    issuer = FakeIssuer(settings)
+    return issuer
+
+
+def test_session_token_forwards_language(settings: Settings) -> None:
+    issuer = _fake_issuer(settings)
+    client = TestClient(create_app(settings, lambda s: issuer))
+    res = client.post("/api/session-token", json={"language": "ta-IN"})
+    assert res.status_code == 200
+    assert issuer.language == "ta-IN"
+
+
+def test_session_token_accepts_auto(settings: Settings) -> None:
+    issuer = _fake_issuer(settings)
+    client = TestClient(create_app(settings, lambda s: issuer))
+    res = client.post("/api/session-token", json={"language": "auto"})
+    assert res.status_code == 200
+    assert issuer.language == "auto"
+
+
+def test_session_token_rejects_unknown_language(settings: Settings) -> None:
+    client = make_client(settings)
+    res = client.post("/api/session-token", json={"language": "klingon"})
+    assert res.status_code == 400
+    assert "BCP-47" in res.json()["detail"]

@@ -3,26 +3,46 @@
 from __future__ import annotations
 
 import os
+import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 
 DEFAULT_MODEL = "gemini-3.8-live"
 DEFAULT_VOICE = "Kore"
-# Pins the spoken language/accent of the prebuilt voices. Native-audio Live
-# models drift across languages without this: the voice follows whatever
-# language it "hears", so typed input in one language can be answered in another.
-DEFAULT_LANGUAGE = "en-US"
+# Per-session language. "auto" mirrors the user's language (fully multilingual,
+# small drift risk with native-audio models); a BCP-47 code like "en-IN" pins
+# the voice to that language/accent and removes drift entirely.
+DEFAULT_LANGUAGE = "auto"
 # The SDKs only support ephemeral tokens on v1alpha at the moment.
 DEFAULT_API_VERSION = "v1alpha"
 DEFAULT_SYSTEM_INSTRUCTION = (
-    "You are a friendly, concise voice assistant. Always respond in English; "
-    "never switch to another language, even if the user mixes languages or "
-    "speaks in a different one. Keep answers short and conversational, because "
-    "they are spoken aloud. If you did not understand the user, ask them to "
-    "repeat. If the user interrupts you, stop, briefly acknowledge what they "
-    "said, and continue from where you left off."
+    "You are a friendly, concise voice assistant. Keep answers short and "
+    "conversational, because they are spoken aloud. If you did not understand "
+    "the user, ask them to repeat. If the user interrupts you, stop, briefly "
+    "acknowledge what they said, and continue from where you left off."
 )
 PLACEHOLDER_KEYS = {"", "your_gemini_api_key_here", "changeme"}
+
+# "auto" or a BCP-47-ish language tag: en, en-IN, zh-Hans-CN, pt-BR...
+LANGUAGE_RE = re.compile(r"^[a-z]{2,3}(-[A-Za-z0-9]{2,8}){0,2}$")
+
+
+def parse_language(raw: str | None, default: str = DEFAULT_LANGUAGE) -> str:
+    """Normalise a requested language to "auto" or a BCP-47 code, or raise ValueError."""
+    value = (raw or "").strip() or default
+    if value == "auto" or LANGUAGE_RE.match(value):
+        return value
+    raise ValueError(
+        f"language must be 'auto' or a BCP-47 code such as 'en-IN' or 'ta-IN', got {raw!r}."
+    )
+
+
+def _parse_language_setting(raw: str) -> str:
+    """Like parse_language, but raises ConfigError for a bad GEMINI_LANGUAGE env value."""
+    try:
+        return parse_language(raw)
+    except ValueError as exc:
+        raise ConfigError(f"GEMINI_LANGUAGE is invalid: {exc}") from exc
 
 
 class ConfigError(ValueError):
@@ -97,7 +117,7 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         gemini_api_key=api_key,
         gemini_model=model,
         gemini_voice=env.get("GEMINI_VOICE", "").strip() or DEFAULT_VOICE,
-        gemini_language=env.get("GEMINI_LANGUAGE", "").strip() or DEFAULT_LANGUAGE,
+        gemini_language=_parse_language_setting(env.get("GEMINI_LANGUAGE", "").strip()),
         gemini_api_version=api_version,
         system_instruction=env.get("GEMINI_SYSTEM_INSTRUCTION", "").strip()
         or DEFAULT_SYSTEM_INSTRUCTION,

@@ -23,6 +23,15 @@ describe("fetchSessionToken", () => {
     const [url, init] = vi.mocked(fetch).mock.calls[0];
     expect(url).toBe("/api/session-token");
     expect(init?.method).toBe("POST");
+    expect(init?.body).toBeUndefined();
+  });
+
+  it("sends the requested language in the body", async () => {
+    stubFetch(async () => json(200, { token: "auth_tokens/abc", model: "m" }));
+    await fetchSessionToken("ta-IN");
+    const [, init] = vi.mocked(fetch).mock.calls[0];
+    expect(init?.headers).toEqual({ "Content-Type": "application/json" });
+    expect(init?.body).toBe(JSON.stringify({ language: "ta-IN" }));
   });
 
   it("reports an unreachable backend", async () => {
